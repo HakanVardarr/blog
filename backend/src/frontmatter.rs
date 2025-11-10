@@ -1,48 +1,49 @@
 use chrono::NaiveDate;
+use serde::Serialize;
 use thiserror::Error;
 
 macro_rules! take_field {
-    ($missing:expr, $key:literal, $value:expr, $metadata:expr, $field:ident) => {{
+    ($missing:expr, $key:literal, $value:expr, $FrontMatter:expr, $field:ident) => {{
         $missing.remove(
             $missing
                 .iter()
                 .position(|&s| s == $key)
-                .ok_or(MetadataParseError::DuplicateKey($key))?,
+                .ok_or(FrontMatterParseError::DuplicateKey($key))?,
         );
-        $metadata.$field = $value;
+        $FrontMatter.$field = $value;
     }};
 }
 
-#[derive(Debug, Default)]
-pub struct Metadata {
-    title: String,
-    date: NaiveDate,
-    slug: String,
-    tags: Vec<String>,
-    description: String,
+#[derive(Default, Debug, Serialize)]
+pub struct FrontMatter {
+    pub title: String,
+    pub date: NaiveDate,
+    pub slug: String,
+    pub tags: Vec<String>,
+    pub description: String,
 }
 
 #[derive(Debug, Error)]
-pub enum MetadataParseError {
-    /// Triggered when a required metadata field (like `title` or `date`) is missing.
+pub enum FrontMatterParseError {
+    /// Triggered when a required FrontMatter field (like `title` or `date`) is missing.
     #[error(
-        "Missing required field: `{0}`. Please make sure all mandatory metadata keys are included."
+        "Missing required field: `{0}`. Please make sure all mandatory FrontMatter keys are included."
     )]
     MissingKey(&'static str),
     /// Triggered when multiple required fields are missing at once.
-    #[error("Missing required fields: {0:?}. Please add these keys to your metadata block.")]
+    #[error("Missing required fields: {0:?}. Please add these keys to your FrontMatter block.")]
     MissingKeys(Vec<&'static str>),
-    /// Triggered when there is a duplicate key in the metadata.
-    #[error("There is duplicate key: `{0}` in the metadata block please remove one of them.")]
+    /// Triggered when there is a duplicate key in the FrontMatter.
+    #[error("There is duplicate key: `{0}` in the FrontMatter block please remove one of them.")]
     DuplicateKey(&'static str),
     /// Triggered when the date format is invalid.
     #[error("Invalid date format. Please use the format: YYYY-MM-DD (e.g., 2025-11-03).")]
     InvalidDateTime,
 }
 
-impl Metadata {
-    pub fn new(raw: &str) -> Result<Self, MetadataParseError> {
-        let mut metadata = Metadata::default();
+impl FrontMatter {
+    pub fn new(raw: &str) -> Result<Self, FrontMatterParseError> {
+        let mut front_matter = FrontMatter::default();
         let mut missing = vec!["title", "date", "slug", "tags", "description"];
 
         for line in raw.lines() {
@@ -56,26 +57,32 @@ impl Metadata {
             let value = line_split[1];
 
             match key {
-                "title" => take_field!(missing, "title", value.replace("\"", ""), metadata, title),
+                "title" => take_field!(
+                    missing,
+                    "title",
+                    value.replace("\"", ""),
+                    front_matter,
+                    title
+                ),
                 "date" => {
                     let parsed_date = NaiveDate::parse_from_str(value, "%Y-%m-%d")
-                        .map_err(|_| MetadataParseError::InvalidDateTime)?;
-                    take_field!(missing, "date", parsed_date, metadata, date)
+                        .map_err(|_| FrontMatterParseError::InvalidDateTime)?;
+                    take_field!(missing, "date", parsed_date, front_matter, date)
                 }
-                "slug" => take_field!(missing, "slug", value.replace("\"", ""), metadata, slug),
+                "slug" => take_field!(missing, "slug", value.replace("\"", ""), front_matter, slug),
                 "tags" => {
                     let tags = value[1..value.len() - 1]
                         .split(',')
                         .map(|s| s.replace("\"", "").trim().into())
                         .collect();
-                    take_field!(missing, "tags", tags, metadata, tags)
+                    take_field!(missing, "tags", tags, front_matter, tags)
                 }
                 "description" => {
                     take_field!(
                         missing,
                         "description",
                         value.replace("\"", ""),
-                        metadata,
+                        front_matter,
                         description
                     )
                 }
@@ -85,13 +92,13 @@ impl Metadata {
 
         if !missing.is_empty() {
             if missing.len() == 1 {
-                return Err(MetadataParseError::MissingKey(missing[0]));
+                return Err(FrontMatterParseError::MissingKey(missing[0]));
             } else {
-                return Err(MetadataParseError::MissingKeys(missing));
+                return Err(FrontMatterParseError::MissingKeys(missing));
             }
         }
 
-        Ok(metadata)
+        Ok(front_matter)
     }
 }
 
@@ -100,21 +107,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_full_metadata() {
+    fn parse_full_frontmatter() {
         let raw = r#"
 title: "Rust Blog"
 date: 2025-11-03
 slug: "rust-blog"
 tags: ["rust", "axum", "markdown"]
-description: "A test blog metadata."
+description: "A test blog FrontMatter."
 "#;
 
-        let meta = Metadata::new(raw).unwrap();
+        let meta = FrontMatter::new(raw).unwrap();
         assert_eq!(meta.title, "Rust Blog");
         assert_eq!(meta.date, NaiveDate::from_ymd_opt(2025, 11, 3).unwrap());
         assert_eq!(meta.slug, "rust-blog");
         assert_eq!(meta.tags, vec!["rust", "axum", "markdown"]);
-        assert_eq!(meta.description, "A test blog metadata.");
+        assert_eq!(meta.description, "A test blog FrontMatter.");
     }
 
     #[test]
@@ -126,9 +133,9 @@ tags: ["rust", "axum"]
 description: "Missing date field."
 "#;
 
-        let err = Metadata::new(raw).unwrap_err();
+        let err = FrontMatter::new(raw).unwrap_err();
         match err {
-            MetadataParseError::MissingKey(key) => assert_eq!(key, "date"),
+            FrontMatterParseError::MissingKey(key) => assert_eq!(key, "date"),
             _ => panic!("Expected MissingKey error"),
         }
     }
@@ -140,9 +147,9 @@ title: "Rust Blog"
 tags: ["rust"]
 "#;
 
-        let err = Metadata::new(raw).unwrap_err();
+        let err = FrontMatter::new(raw).unwrap_err();
         match err {
-            MetadataParseError::MissingKeys(keys) => {
+            FrontMatterParseError::MissingKeys(keys) => {
                 assert!(keys.contains(&"date"));
                 assert!(keys.contains(&"slug"));
                 assert!(keys.contains(&"description"));
@@ -161,9 +168,9 @@ tags: ["rust"]
 description: "Invalid date format."
 "#;
 
-        let err = Metadata::new(raw).unwrap_err();
+        let err = FrontMatter::new(raw).unwrap_err();
         match err {
-            MetadataParseError::InvalidDateTime => (),
+            FrontMatterParseError::InvalidDateTime => (),
             _ => panic!("Expected InvalidDateTime error"),
         }
     }
@@ -179,9 +186,9 @@ tags: ["rust"]
 description: "Duplicate title."
 "#;
 
-        let err = Metadata::new(raw).unwrap_err();
+        let err = FrontMatter::new(raw).unwrap_err();
         match err {
-            MetadataParseError::DuplicateKey(key) => assert_eq!(key, "title"),
+            FrontMatterParseError::DuplicateKey(key) => assert_eq!(key, "title"),
             _ => panic!("Expected DuplicateKey error"),
         }
     }
@@ -201,7 +208,7 @@ tags: ["rust", "axum"]
 description: "Handles comments and empty lines."
 "#;
 
-        let meta = Metadata::new(raw).unwrap();
+        let meta = FrontMatter::new(raw).unwrap();
         assert_eq!(meta.title, "Rust Blog");
         assert_eq!(meta.date, NaiveDate::from_ymd_opt(2025, 11, 3).unwrap());
         assert_eq!(meta.slug, "rust-blog");
