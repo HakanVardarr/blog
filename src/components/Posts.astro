@@ -1,0 +1,16 @@
+---
+import Post from "./Post.astro";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  posts: CollectionEntry<"blog">[];
+}
+
+const { posts } = Astro.props;
+---
+
+<section class="py-16">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-10">
+    {posts.map((post, index) => <Post post={post} index={index} />)}
+  </div>
+</section>

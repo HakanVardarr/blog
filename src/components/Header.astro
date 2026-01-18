@@ -6,8 +6,8 @@ const { active } = Astro.props;
   <div
     class="max-w-6xl mx-auto px-6 py-10 h-16 flex items-center justify-between"
   >
-    <a href="/" class="text-xl font-bold">Hakan Vardar</a>
-    <nav class="hidden sm:flex items-center space-x-6">
+    <a href="/" class="text-lg font-bold font-pixel">>_</a>
+    <nav class="hidden sm:flex items-center space-x-6 font-pixel">
       <a
         href="/"
         class={`px-3 py-2 text-sm transition-all duration-200
@@ -20,20 +20,6 @@ const { active } = Astro.props;
       >
         HOME
       </a>
-
-      <a
-        href="/categories"
-        class={`px-3 py-2 text-sm transition-all duration-200
-      ${
-        active === "categories"
-          ? "text-black border-b-2 border-black"
-          : "text-gray-400 hover:text-black"
-      }
-    `}
-      >
-        CATEGORIES
-      </a>
-
       <a
         href="/about"
         class={`px-3 py-2 text-sm transition-all duration-200
@@ -47,23 +33,10 @@ const { active } = Astro.props;
         ABOUT
       </a>
     </nav>
-    <button
-      class="hidden sm:block px-10 py-2 bg-white text-black border-2 border-black hover:bg-black hover:text-white text-sm transition-all duration-200"
-    >
-      <strong>SUBSCRIBE</strong>
-    </button>
+
     <button class="sm:hidden p-2 rounded">
-      <svg
-        class="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M4 6h16M4 12h16M4 18h16"></path>
+      <svg width="32" height="32" viewBox="0 0 16 16" class="fill-current">
+        <path d="M0 3h16v2H0zM0 7h16v2H0zM0 11h16v2H0z"></path>
       </svg>
     </button>
   </div>
