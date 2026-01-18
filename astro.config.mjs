@@ -10,7 +10,11 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   site: "https://example.com",
   integrations: [mdx(), sitemap()],
-
+  markdown: {
+    shikiConfig: {
+      theme: "github-light",
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
   },

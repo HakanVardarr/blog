@@ -1,5 +1,6 @@
 ---
 import Main from "../../layouts/Main.astro";
+import Footer from "../../components/Footer.astro";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
@@ -12,10 +13,44 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await post.render();
+
+const formattedDate = post.data.date.toLocaleDateString("en-US", {
+  month: "short",
+  day: "2-digit",
+  year: "numeric",
+});
 ---
 
 <Main title={post.data.title}>
-  <h2>{post.data.title}</h2>
-  <p>{post.data.description}</p>
-  <Content />
+  <div class="max-w-6xl mx-auto py-15 px-7 min-h-132.5">
+    <div class="flex flex-col gap-6 mb-8">
+      <span class="text-lg font-semibold font-pixel tracking-widest">
+        {post.data.title}
+      </span>
+      <span class="text-purple-600 text-xs font-pixel tracking-widest">
+        {formattedDate}
+      </span>
+      <span class={`font-pixel text-xs tracking-widest text-purple-600`}>
+        {post.data.category}
+      </span>
+    </div>
+
+    <div
+      class="prose prose-lg prose-slate
+    max-w-4xl mx-auto py-12
+    prose-h1:font-bold prose-h1:text-4xl prose-h1:mt-8
+    prose-h2:font-pixel prose-h2:text-3xl prose-h2:mt-6
+    prose-h3:font-semibold prose-h3:text-2xl prose-h3:mt-4
+    prose-p:font-serif prose-p:text-base leading-relaxed
+    prose-a:text-indigo-600 prose-a:underline hover:prose-a:text-indigo-800
+    prose-ul:list-disc prose-ul:ml-6
+    prose-ol:list-decimal prose-ol:ml-6
+    prose-hr:border prose-hr:border-gray-300
+    prose-pre:bg-gray-100 prose-pre:p-6 prose-pre:rounded-lg
+    prose-blockquote:border-l-4 prose-blockquote:border-gray-400 prose-blockquote:pl-4 prose-blockquote:italic"
+    >
+      <Content />
+    </div>
+  </div>
+  <Footer />
 </Main>
